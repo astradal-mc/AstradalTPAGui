@@ -67,18 +67,23 @@ public final class InventoryClickListener implements Listener {
             User essTarget = essentials.getUser(target);
 
             try {
-                // 3. Use the official API to send the request (false = tpa, true = tpahere)
-                essClicker.requestTeleport(essTarget, false);
+                // 3. Use the official API to register the request silently
+                essTarget.requestTeleport(essClicker, false);
 
+                // Tell the sender it worked
                 clicker.sendMessage(Component.text("Request sent to ", NamedTextColor.YELLOW)
                     .append(Component.text(target.getName(), NamedTextColor.GOLD)));
 
-            } catch (Exception e) {
-                // Essentials throws an exception if the target has tp toggle off, is ignoring them, etc.
-                // The exception message contains the localized Essentials error, so we just send it to the player!
-                clicker.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
+                // Tell the target they have a request!
+                target.sendMessage(Component.text(clicker.getName(), NamedTextColor.GOLD)
+                    .append(Component.text(" has requested to teleport to you.", NamedTextColor.YELLOW)));
+                target.sendMessage(Component.text("Type ", NamedTextColor.YELLOW)
+                    .append(Component.text("/tpaccept", NamedTextColor.GREEN))
+                    .append(Component.text(" to accept.", NamedTextColor.YELLOW)));
 
-                // Clean up the pending request since it failed
+            } catch (Exception e) {
+                // Catch any Essentials errors (like target having tp toggle off)
+                clicker.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
                 scrollManager.removePendingRequest(clicker);
             }
 
