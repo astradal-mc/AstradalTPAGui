@@ -1,7 +1,8 @@
 package net.astradal.astradalTPAGui.listeners;
 
 import net.astradal.astradalTPAGui.AstradalTPAGui;
-import net.astradal.astradalTPAGui.services.TPAScrollService;
+import net.astradal.astradalTPAGui.gui.GuiInventory;
+import net.astradal.astradalTPAGui.managers.ScrollManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -12,10 +13,11 @@ import org.bukkit.inventory.ItemStack;
 public class OnScrollUseListener implements Listener {
 
     private final AstradalTPAGui plugin;
-    private final TPAScrollService scrollService;
-    public OnScrollUseListener(AstradalTPAGui plugin, TPAScrollService scrollService) {
+    private final ScrollManager scrollManager;
+
+    public OnScrollUseListener(AstradalTPAGui plugin, ScrollManager scrollManager) {
         this.plugin = plugin;
-        this.scrollService = scrollService;
+        this.scrollManager = scrollManager;
     }
 
     @EventHandler
@@ -26,13 +28,17 @@ public class OnScrollUseListener implements Listener {
         ItemStack item = event.getItem();
         if (item == null || item.getType().isAir()) return;
 
-        Player player = event.getPlayer();
+        // Check if the item is a TPA scroll using the new manager
+        if (scrollManager.isTPAScroll(item)) {
+            event.setCancelled(true); // Prevent default item usage (like placing blocks if it was re-textured)
 
-        if (scrollService.openGuiIfScroll(player, item)) {
-            event.setCancelled(true); // Prevent default right-click behavior if scroll was used
-            plugin.getLogger().info("Player " + player.getName() + " used a scroll.");
-            scrollService.markUsedScroll(player);
+            Player player = event.getPlayer();
+
+            // Instantiate and open the GUI directly
+            GuiInventory gui = new GuiInventory(plugin, player);
+            player.openInventory(gui.getInventory());
+
+            plugin.getLogger().info("Player " + player.getName() + " opened the TPA scroll menu.");
         }
     }
-
 }

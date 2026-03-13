@@ -27,8 +27,9 @@ public final class GetScrollCommand {
             return 0;
         }
 
-        player.getInventory().addItem(plugin.getScrollService().createTPAScrollItem());
+        player.getInventory().addItem(plugin.getScrollManager().createTPAScrollItem());
         player.sendMessage(Component.text("You have been given a TPA Scroll.", NamedTextColor.GREEN));
         return Command.SINGLE_SUCCESS;
     }
+
 }
