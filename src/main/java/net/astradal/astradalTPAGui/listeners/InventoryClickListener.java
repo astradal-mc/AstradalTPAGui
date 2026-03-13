@@ -1,5 +1,7 @@
 package net.astradal.astradalTPAGui.listeners;
 
+import com.earth2me.essentials.Essentials;
+import com.earth2me.essentials.User;
 import net.astradal.astradalTPAGui.AstradalTPAGui;
 import net.astradal.astradalTPAGui.managers.ScrollManager;
 import net.astradal.astradalTPAGui.gui.GuiInventory;
@@ -23,10 +25,13 @@ public final class InventoryClickListener implements Listener {
 
     private final AstradalTPAGui plugin;
     private final ScrollManager scrollManager;
+    private final Essentials essentials;
 
     public InventoryClickListener(AstradalTPAGui plugin, ScrollManager scrollManager) {
         this.plugin = plugin;
         this.scrollManager = scrollManager;
+        // Hook directly into the Essentials plugin instance
+        this.essentials = (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
     }
 
     @EventHandler
@@ -54,11 +59,29 @@ public final class InventoryClickListener implements Listener {
         Player target = Bukkit.getPlayer(UUID.fromString(uuidStr));
 
         if (target != null && target.isOnline()) {
-            // Register the attempt
+            // 1. Register the attempt in our manager
             scrollManager.addPendingRequest(clicker, target);
 
-            // Force EssentialsX to handle it natively
-            clicker.performCommand("tpa " + target.getName());
+            // 2. Convert Bukkit players to Essentials Users
+            User essClicker = essentials.getUser(clicker);
+            User essTarget = essentials.getUser(target);
+
+            try {
+                // 3. Use the official API to send the request (false = tpa, true = tpahere)
+                essClicker.requestTeleport(essTarget, false);
+
+                clicker.sendMessage(Component.text("Request sent to ", NamedTextColor.YELLOW)
+                    .append(Component.text(target.getName(), NamedTextColor.GOLD)));
+
+            } catch (Exception e) {
+                // Essentials throws an exception if the target has tp toggle off, is ignoring them, etc.
+                // The exception message contains the localized Essentials error, so we just send it to the player!
+                clicker.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
+
+                // Clean up the pending request since it failed
+                scrollManager.removePendingRequest(clicker);
+            }
+
             clicker.closeInventory();
         } else {
             clicker.sendMessage(Component.text("That player is no longer online.", NamedTextColor.RED));
