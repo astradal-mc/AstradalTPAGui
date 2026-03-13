@@ -7,7 +7,6 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.astradal.astradalTPAGui.commands.TPAGuiCommand;
 import net.astradal.astradalTPAGui.listeners.InventoryClickListener;
 import net.astradal.astradalTPAGui.listeners.OnScrollUseListener;
-import net.astradal.astradalTPAGui.listeners.TeleportListener;
 import net.astradal.astradalTPAGui.managers.ScrollManager;
 import net.astradal.astradalTPAGui.utils.ConfigMigrationUtil;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,7 +29,6 @@ public final class AstradalTPAGui extends JavaPlugin {
         registerCommands();
 
         getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
-        getServer().getPluginManager().registerEvents(new TeleportListener(scrollManager), this);
         getServer().getPluginManager().registerEvents(new OnScrollUseListener(this, scrollManager), this);
     }
 
