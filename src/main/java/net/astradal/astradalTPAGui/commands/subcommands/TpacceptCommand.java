@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.astradal.astradalTPAGui.AstradalTPAGui;
 import net.astradal.astradalTPAGui.managers.ScrollManager.ScrollRequest;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -50,19 +51,32 @@ public final class TpacceptCommand {
         target.sendMessage(Component.text("Teleport request accepted.", NamedTextColor.GREEN));
         requester.sendMessage(Component.text(target.getName() + " accepted your scroll request!", NamedTextColor.GREEN));
 
-        // Pull warmup settings from config (default to 3 seconds if missing)
-        int warmupSeconds = plugin.getConfig().getInt("teleport-mechanics.warmup-seconds", 3);
+        // Pull warmup settings from config (default to 10 seconds if missing)
+        int warmupSeconds = plugin.getConfig().getInt("teleport-mechanics.warmup-seconds", 10);
         boolean cancelOnMove = plugin.getConfig().getBoolean("teleport-mechanics.cancel-on-move", true);
+
+        // Create the BossBar
+        final BossBar warmupBar = BossBar.bossBar(
+            Component.text("Teleporting...", NamedTextColor.LIGHT_PURPLE),
+            1.0f,
+            BossBar.Color.PURPLE,
+            BossBar.Overlay.PROGRESS
+        );
+
+        // Show it to the traveling player right away
+        traveler.showBossBar(warmupBar);
 
         // Start the Warmup Sequence
         new BukkitRunnable() {
-            int ticks = warmupSeconds * 20;
+            final int totalTicks = warmupSeconds * 20;
+            int ticks = totalTicks;
             final Location startLoc = traveler.getLocation();
 
             @Override
             public void run() {
                 // 1. Safety Check: Are they both still online?
                 if (!traveler.isOnline() || !destination.isOnline()) {
+                    if (traveler.isOnline()) traveler.hideBossBar(warmupBar);
                     plugin.getScrollManager().removePendingRequest(requester);
                     this.cancel();
                     return;
@@ -70,6 +84,7 @@ public final class TpacceptCommand {
 
                 // 2. Movement Check
                 if (cancelOnMove && (!startLoc.getWorld().equals(traveler.getWorld()) || startLoc.distanceSquared(traveler.getLocation()) > 0.5)) {
+                    traveler.hideBossBar(warmupBar);
                     traveler.sendMessage(Component.text("Teleport cancelled because you moved!", NamedTextColor.RED));
                     plugin.getScrollManager().removePendingRequest(requester);
                     this.cancel();
@@ -79,6 +94,7 @@ public final class TpacceptCommand {
                 // 3. Execution
                 if (ticks <= 0) {
                     this.cancel();
+                    traveler.hideBossBar(warmupBar);
                     traveler.sendMessage(Component.text("Teleporting...", NamedTextColor.GOLD));
 
                     // Paper's Native Async Teleport
@@ -92,16 +108,19 @@ public final class TpacceptCommand {
                     return;
                 }
 
-                // 4. Effects & Countdown
+                // 4. Effects & BossBar Animation
+                // Calculate progress (0.0 to 1.0) and update the bar
+                float progress = totalTicks > 0 ? Math.max(0.0f, Math.min(1.0f, (float) ticks / totalTicks)) : 0.0f;
+                warmupBar.progress(progress);
+
+                // Update the text on the bar to show the exact seconds remaining
+                int secondsLeft = (int) Math.ceil(ticks / 20.0);
+                warmupBar.name(Component.text("Warming up... " + secondsLeft + "s", NamedTextColor.LIGHT_PURPLE));
+
                 // Spawn cool portal particles around the traveler every 5 ticks
                 traveler.getWorld().spawnParticle(Particle.PORTAL, traveler.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.1);
 
-                // Send a chat message every full second
-                if (ticks % 20 == 0) {
-                    traveler.sendMessage(Component.text("Teleporting in " + (ticks / 20) + " seconds... Don't move.", NamedTextColor.YELLOW));
-                }
-
-                ticks -= 5; // We run the task every 5 ticks (1/4 second) for smooth particles
+                ticks -= 5; // We run the task every 5 ticks (1/4 second) for smooth animations
             }
         }.runTaskTimer(plugin, 0L, 5L);
 
