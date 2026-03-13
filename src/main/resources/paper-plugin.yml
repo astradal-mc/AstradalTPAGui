@@ -11,7 +11,7 @@ dependencies:
   server:
     Essentials:
       load: BEFORE
-      required: true
+      required: false
 
 permissions:
   astradal.tpagui.command.tpagui:

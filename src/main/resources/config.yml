@@ -1,1 +1,4 @@
 version: '${version}'
+teleport-mechanics:
+  warmup-seconds: 10
+  cancel-on-move: true
