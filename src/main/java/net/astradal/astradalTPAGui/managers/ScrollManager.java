@@ -22,7 +22,8 @@ public class ScrollManager {
     private final NamespacedKey key;
 
     // Tracks Requester UUID -> Target UUID
-    private final Map<UUID, UUID> pendingTeleports = new HashMap<>();
+    private final Map<UUID, ScrollRequest> pendingTeleports = new HashMap<>();
+    public record ScrollRequest(UUID requester, UUID target, boolean isHere) {}
 
     public ScrollManager(AstradalTPAGui plugin) {
         this.plugin = plugin;
@@ -49,15 +50,10 @@ public class ScrollManager {
         return item;
     }
 
-    public void addPendingRequest(Player requester, Player target) {
-        pendingTeleports.put(requester.getUniqueId(), target.getUniqueId());
+    public void addPendingRequest(Player requester, Player target, boolean isHere) {
+        pendingTeleports.put(requester.getUniqueId(), new ScrollRequest(requester.getUniqueId(), target.getUniqueId(), isHere));
 
-        // Auto-cleanup memory after 130 seconds (Essentials default 120s timeout + 10s buffer)
-        Bukkit.getScheduler().runTaskLater(plugin, () -> pendingTeleports.remove(requester.getUniqueId(), target.getUniqueId()), 20L * 130);
-    }
-
-    public UUID getPendingTarget(Player requester) {
-        return pendingTeleports.get(requester.getUniqueId());
+        Bukkit.getScheduler().runTaskLater(plugin, () -> pendingTeleports.remove(requester.getUniqueId()), 20L * 130);
     }
 
     public void removePendingRequest(Player requester) {
@@ -75,5 +71,18 @@ public class ScrollManager {
                 break; // Only consume one
             }
         }
+    }
+
+    public ScrollRequest getRequestByTarget(Player target) {
+        for (ScrollRequest request : pendingTeleports.values()) {
+            if (request.target().equals(target.getUniqueId())) {
+                return request;
+            }
+        }
+        return null;
+    }
+
+    public ScrollRequest getRequestByRequester(Player requester) {
+        return pendingTeleports.get(requester.getUniqueId());
     }
 }

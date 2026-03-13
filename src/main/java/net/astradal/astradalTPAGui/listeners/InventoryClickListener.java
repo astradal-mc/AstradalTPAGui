@@ -1,9 +1,6 @@
 package net.astradal.astradalTPAGui.listeners;
 
-import com.earth2me.essentials.Essentials;
-import com.earth2me.essentials.User;
 import net.astradal.astradalTPAGui.AstradalTPAGui;
-import net.astradal.astradalTPAGui.managers.ScrollManager;
 import net.astradal.astradalTPAGui.gui.GuiInventory;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -24,14 +21,9 @@ import java.util.UUID;
 public final class InventoryClickListener implements Listener {
 
     private final AstradalTPAGui plugin;
-    private final ScrollManager scrollManager;
-    private final Essentials essentials;
 
-    public InventoryClickListener(AstradalTPAGui plugin, ScrollManager scrollManager) {
+    public InventoryClickListener(AstradalTPAGui plugin) {
         this.plugin = plugin;
-        this.scrollManager = scrollManager;
-        // Hook directly into the Essentials plugin instance
-        this.essentials = (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
     }
 
     @EventHandler
@@ -59,35 +51,15 @@ public final class InventoryClickListener implements Listener {
         Player target = Bukkit.getPlayer(UUID.fromString(uuidStr));
 
         if (target != null && target.isOnline()) {
-            // 1. Register the attempt in our manager
-            scrollManager.addPendingRequest(clicker, target);
+            clicker.closeInventory();
 
-            // 2. Convert Bukkit players to Essentials Users
-            User essClicker = essentials.getUser(clicker);
-            User essTarget = essentials.getUser(target);
-
-            try {
-                // 3. Use the official API to register the request silently
-                essTarget.requestTeleport(essClicker, false);
-
-                // Tell the sender it worked
-                clicker.sendMessage(Component.text("Request sent to ", NamedTextColor.YELLOW)
-                    .append(Component.text(target.getName(), NamedTextColor.GOLD)));
-
-                // Tell the target they have a request!
-                target.sendMessage(Component.text(clicker.getName(), NamedTextColor.GOLD)
-                    .append(Component.text(" has requested to teleport to you.", NamedTextColor.YELLOW)));
-                target.sendMessage(Component.text("Type ", NamedTextColor.YELLOW)
-                    .append(Component.text("/tpaccept", NamedTextColor.GREEN))
-                    .append(Component.text(" to accept.", NamedTextColor.YELLOW)));
-
-            } catch (Exception e) {
-                // Catch any Essentials errors (like target having tp toggle off)
-                clicker.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
-                scrollManager.removePendingRequest(clicker);
+            // Route to your standalone commands based on click type
+            if (event.isRightClick()) {
+                clicker.performCommand("tpagui tpahere " + target.getName());
+            } else {
+                clicker.performCommand("tpagui tpa " + target.getName());
             }
 
-            clicker.closeInventory();
         } else {
             clicker.sendMessage(Component.text("That player is no longer online.", NamedTextColor.RED));
             clicker.closeInventory();

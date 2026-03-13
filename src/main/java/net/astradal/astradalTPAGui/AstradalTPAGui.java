@@ -29,7 +29,7 @@ public final class AstradalTPAGui extends JavaPlugin {
 
         registerCommands();
 
-        getServer().getPluginManager().registerEvents(new InventoryClickListener(this, scrollManager), this);
+        getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(scrollManager), this);
         getServer().getPluginManager().registerEvents(new OnScrollUseListener(this, scrollManager), this);
     }

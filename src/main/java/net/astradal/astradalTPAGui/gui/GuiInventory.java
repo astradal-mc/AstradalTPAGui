@@ -46,7 +46,8 @@ public class GuiInventory implements InventoryHolder {
         NamespacedKey key = new NamespacedKey(plugin, "tpa_target");
 
         List<Component> lore = List.of(
-            Component.text("Click to send TPA request", NamedTextColor.GREEN)
+            Component.text("Left-Click to teleport to them", NamedTextColor.GREEN),
+            Component.text("Right-Click to pull them to you", NamedTextColor.LIGHT_PURPLE)
         );
 
         // Iterate over each player from the list and add their head to the GUI, saving there UUID as a string in the PDC

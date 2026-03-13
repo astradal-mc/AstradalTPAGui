@@ -8,8 +8,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
-import java.util.UUID;
-
 public class TeleportListener implements Listener {
 
     private final ScrollManager scrollManager;
@@ -20,25 +18,28 @@ public class TeleportListener implements Listener {
 
     @EventHandler
     public void onPlayerTeleport(PlayerTeleportEvent event) {
-        Player player = event.getPlayer();
-
-        // 1. Check if they used a scroll recently
-        UUID targetId = scrollManager.getPendingTarget(player);
-        if (targetId == null) return;
-
-        Player target = Bukkit.getPlayer(targetId);
-        if (target == null || !target.isOnline()) return;
-
+        Player teleporter = event.getPlayer();
         Location destination = event.getTo();
-        Location targetLoc = target.getLocation();
 
-        // 2. Check if the destination is near the requested target
-        // We use distanceSquared for performance, checking within ~3 blocks
-        if (destination.getWorld().equals(targetLoc.getWorld()) && destination.distanceSquared(targetLoc) <= 9.0) {
+        // Scenario A: It is a normal TPA. The Teleporter IS the Requester.
+        ScrollManager.ScrollRequest tpaReq = scrollManager.getRequestByRequester(teleporter);
+        if (tpaReq != null && !tpaReq.isHere()) {
+            Player target = Bukkit.getPlayer(tpaReq.target());
+            if (target != null && destination.getWorld().equals(target.getWorld()) && destination.distanceSquared(target.getLocation()) <= 9.0) {
+                scrollManager.consumeScroll(teleporter); // Requester pays
+                scrollManager.removePendingRequest(teleporter);
+            }
+            return;
+        }
 
-            // It's a match! The TPA was successful.
-            scrollManager.consumeScroll(player);
-            scrollManager.removePendingRequest(player);
+        // Scenario B: It is a TPAHERE. The Teleporter IS the Target.
+        ScrollManager.ScrollRequest hereReq = scrollManager.getRequestByTarget(teleporter);
+        if (hereReq != null && hereReq.isHere()) {
+            Player requester = Bukkit.getPlayer(hereReq.requester());
+            if (requester != null && destination.getWorld().equals(requester.getWorld()) && destination.distanceSquared(requester.getLocation()) <= 9.0) {
+                scrollManager.consumeScroll(requester); // Requester STILL pays
+                scrollManager.removePendingRequest(requester);
+            }
         }
     }
 }

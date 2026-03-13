@@ -24,13 +24,17 @@ public final class TPAGuiCommand {
         CommandDispatcher<CommandSourceStack> dispatcher
     ) {
         var rootNode = Commands.literal("tpagui")
-            .executes(ctx -> HelpCommand.execute(ctx, dispatcher)); // Default action
+            .executes(ctx -> HelpCommand.execute(ctx, dispatcher));
 
         // Register all subcommands
         rootNode.then(HelpCommand.build(dispatcher));
         rootNode.then(GetScrollCommand.build(plugin));
         rootNode.then(ReloadCommand.build(plugin));
         rootNode.then(VersionCommand.build(plugin));
+        rootNode.then(TpaCommand.build(plugin));
+        rootNode.then(TpacceptCommand.build(plugin));
+        rootNode.then(TpahereCommand.build(plugin));
+        rootNode.then(TpacancelCommand.build(plugin));
 
         return rootNode;
     }
