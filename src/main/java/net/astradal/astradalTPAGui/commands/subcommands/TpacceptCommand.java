@@ -94,13 +94,35 @@ public final class TpacceptCommand {
                 // 3. Execution
                 if (ticks <= 0) {
                     this.cancel();
+
+                    // Verify the requester STILL has the scroll right before we teleport
+                    boolean hasScroll = false;
+                    for (org.bukkit.inventory.ItemStack item : requester.getInventory().getContents()) {
+                        if (plugin.getScrollManager().isTPAScroll(item)) {
+                            hasScroll = true;
+                            break;
+                        }
+                    }
+
+                    // If they dropped it, cancel the teleport entirely
+                    if (!hasScroll) {
+                        traveler.hideBossBar(warmupBar);
+                        traveler.sendMessage(Component.text("Teleport cancelled! The scroll is no longer in the requester's inventory.", NamedTextColor.RED));
+
+                        if (!traveler.equals(requester)) { // Notify the other person too
+                            requester.sendMessage(Component.text("Teleport cancelled! You lost the scroll.", NamedTextColor.RED));
+                        }
+
+                        plugin.getScrollManager().removePendingRequest(requester);
+                        return;
+                    }
+
                     traveler.hideBossBar(warmupBar);
                     traveler.sendMessage(Component.text("Teleporting...", NamedTextColor.GOLD));
 
                     // Paper's Native Async Teleport
                     traveler.teleportAsync(destination.getLocation()).thenAccept(success -> {
                         if (success) {
-                            // If they arrive safely, the requester pays the scroll fee!
                             plugin.getScrollManager().consumeScroll(requester);
                             plugin.getScrollManager().removePendingRequest(requester);
                         }
