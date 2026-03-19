@@ -66,7 +66,7 @@ public final class TpahereCommand {
                 .color(NamedTextColor.GREEN)
                 .decorate(TextDecoration.BOLD)
                 .hoverEvent(HoverEvent.showText(Component.text("Click to accept " + player.getName() + "'s scroll teleport")))
-                .clickEvent(ClickEvent.runCommand("/tpahere"));
+                .clickEvent(ClickEvent.runCommand("/tpaccept"));
 
             target.sendMessage(Component.text(player.getName(), NamedTextColor.GOLD)
                 .append(Component.text(" wants you to teleport to them using a TPA Scroll.", NamedTextColor.LIGHT_PURPLE)));
